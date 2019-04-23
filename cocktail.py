@@ -98,11 +98,7 @@ def handle_dialog(res, req):
                         }
                     ]
 
-
                     play_game(res, req)
-
-
-
 
             elif 'нет' in req['request']['nlu']['tokens']:
                 res['response']['text'] = 'Ну и ладно!'
@@ -176,8 +172,6 @@ def handle_dialog(res, req):
                     }
                 ]
 
-
-
         elif req['request']['original_utterance'].lower() == 'помощь':
                 res['response']['text'] = 'Это текст помомщи. Будь смелее и продолжи общение.'
         elif req['request']['original_utterance'].lower() == 'алкогольный':
@@ -246,6 +240,14 @@ def play_game(res, req):
         },
         {
             'title': 'Где попробовать?',
+            'hide': True
+        },
+        {
+            'title': 'алкогольный',
+            'hide': True
+        },
+        {
+            'title': 'безалкогольный',
             'hide': True
         }
     ]
