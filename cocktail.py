@@ -226,12 +226,10 @@ def play_game(res, req):
         res['response']['card']['type'] = 'BigImage'
         res['response']['card']['title'] = 'Вот и он сам ^-^'
         res['response']['card']['image_id'] = id
-        res['response']['text'] = f'''{key[0].lower()}:
-                                      {key[1].lower()}'''
+        
     elif req['request']['original_utterance'].lower() == 'безалкогольный':
         key = random.choice(list(child_recipes.items()))
-        res['response']['text'] = f'''{key[0].lower()}:
-                                      {key[1].lower()}'''
+        
     res['response']['buttons'] = [
         {
             'title': 'Помощь',
