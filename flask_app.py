@@ -2,18 +2,20 @@ from flask import Flask, request
 import logging
 import json
 import random
+from recipes import cocktail_recipes, child_recipes
+from pics import recipes_1, recipes_2
+
 
 app = Flask(__name__)
 
 logging.basicConfig(level=logging.INFO)
 
-get_sack = False
-sessionStorage = {}
 
+sessionStorage = {}
+current_cocktail = None
 
 @app.route('/post', methods=['POST'])
 def main():
-
     logging.info('Request: %r', request.json)
 
     response = {
@@ -53,8 +55,8 @@ def handle_dialog(res, req):
             res['response']['text'] = 'Не раслышала имя. Повтори!'
         else:
             sessionStorage[user_id]['first_name'] = first_name
-            res['response']['text'] = 'Приятно познакомиться, ' + first_name.title()
-            res['response']['text'] = 'Сыграем?'
+            res['response']['text'] = 'Приятно познакомиться, ' + first_name.title() + '. Я Алиса. '\
+                                                                                       'Хочешь рецепт коктеля?'
             res['response']['buttons'] = [
                 {
                     'title': 'Да',
@@ -69,11 +71,7 @@ def handle_dialog(res, req):
                 {
                     'title': 'Помощь',
                     'hide': True
-                },
-                {
-                    'title': 'Действующие лица',
-                    'hide': True
-                    }
+                }
             ]
 
     else:
@@ -82,217 +80,204 @@ def handle_dialog(res, req):
 
             if 'да' in req['request']['nlu']['tokens']:
 
-                if get_sack:
+                if req['request']['original_utterance'].lower() == 'всё':
 
-                    res['response']['text'] = 'вас уволилил'
+                    res['response']['text'] = 'Удачи в приготовлении'
                     res['end_session'] = True
 
                 else:
 
                     sessionStorage[user_id]['game_started'] = True
+                    res['response']['text'] = 'алкогольный или безалкогольный'
+                    res['response']['buttons'] = [
+                        {
+                            'title': 'алкогольный',
+                            'hide': True
+                        },
+                        {
+                            'title': 'безалкогольный',
+                            'hide': True
+                        }
+                    ]
+
                     play_game(res, req)
-
-
 
             elif 'нет' in req['request']['nlu']['tokens']:
                 res['response']['text'] = 'Ну и ладно!'
                 res['end_session'] = True
-            elif req['request']['original_utterance'].lower() == 'действующие лица':
-                characters(res)
-                res['response']['buttons'] = [
-                {
-                    'title': 'Да',
-                    'hide': True
-
-                },
-                {
-                    'title': 'Нет',
-                    'hide': True
-
-                },
-                {
-                    'title': 'Помощь',
-                    'hide': True
-                },
-                {
-                    'title': 'Действующие лица',
-                    'hide': True
-                    }
-            ]
             elif req['request']['original_utterance'].lower() == 'помощь':
-                help(res)
+                res['response']['text'] = 'чтобы получить рецепт напишите "ещё";' \
+                                          'чтобы закончить, напишите "всё"'
                 res['response']['buttons'] = [
-                {
-                    'title': 'Да',
-                    'hide': True
+                    {
+                        'title': 'Да',
+                        'hide': True
 
-                },
-                {
-                    'title': 'Нет',
-                    'hide': True
+                    },
+                    {
+                        'title': 'Нет',
+                        'hide': True
 
-                },
-                {
-                    'title': 'Помощь',
-                    'hide': True
-                },
-                {
-                    'title': 'Действующие лица',
-                    'hide': True
                     }
-            ]
+                ]
+
+            elif req['request']['original_utterance'].lower() == 'ещё':
+                res['response']['text'] = 'алкогольный или безалкогольный'
+                res['response']['buttons'] = [
+                    {
+                        'title': 'алкогольный',
+                        'hide': True
+                    },
+                    {
+                        'title': 'безалкогольный',
+                        'hide': True
+                    }
+                ]
+
+                play_game(res, req)
+            elif req['request']['original_utterance'].lower() == 'узнать рецепт':
+                how_cook(res, req, current_cocktail)
             else:
                 res['response']['text'] = 'Не понял ответа! Так да или нет?'
                 res['response']['buttons'] = [
-                {
-                    'title': 'Да',
-                    'hide': True
+                    {
+                        'title': 'Да',
+                        'hide': True
 
-                },
-                {
-                    'title': 'Нет',
-                    'hide': True
+                    },
+                    {
+                        'title': 'Нет',
+                        'hide': True
 
-                },
-                {
-                    'title': 'Помощь',
-                    'hide': True
-                },
-                {
-                    'title': 'Действующие лица',
-                    'hide': True
+                    },
+                    {
+                        'title': 'Помощь',
+                        'hide': True
+                    },
+                    {
+                        'title': 'ещё',
+                        'hide': True
+                    },
+                    {
+                        'title': 'всё',
+                        'hide': True
+                    },
+                    {
+                        'title': 'Где попробовать?',
+                        'hide': True
+                    },
+                    {
+                        'title': 'алкогольный',
+                        'hide': True
+                    },
+                    {
+                        'title': 'безалкогольный',
+                        'hide': True
                     }
-            ]
-        elif req['request']['original_utterance'].lower() == 'помощь':
-                help(res)
+                ]
 
-        else:
+        elif req['request']['original_utterance'].lower() == 'помощь':
+                res['response']['text'] = 'Это текст помомщи. Будь смелее и продолжи общение.'
+        elif req['request']['original_utterance'].lower() == 'алкогольный':
             play_game(res, req)
+        elif req['request']['original_utterance'].lower() == 'безалкогольный':
+            play_game(res, req)
+        elif req['request']['original_utterance'].lower() == 'ещё':
+            res['response']['text'] = 'алкогольный или безалкогольный'
+            res['response']['buttons'] = [
+                {
+                    'title': 'алкогольный',
+                    'hide': True
+                },
+                {
+                    'title': 'безалкогольный',
+                    'hide': True
+                }
+            ]
+
+            play_game(res, req)
+        elif req['request']['original_utterance'].lower() == 'всё':
+
+                    res['response']['text'] = 'Удачи в приготовлении'
+                    res['end_session'] = True
+
+        elif req['request']['original_utterance'].lower() == 'узнать рецепт':
+            how_cook(res, current_cocktail)
+
+
+def how_cook(res, current_cocktail):
+    key = current_cocktail
+    res['response']['text'] = f'''{key[0].lower()}:
+                                          {key[1].lower()}'''
+    return
 
 
 def play_game(res, req):
-    a = 0
-   
-    text(res, a)
+    global current_cocktail
+    if req['request']['original_utterance'].lower() == 'алкогольный':
+    key = random.choice(list(cocktail_recipes.items()))
+    current_cocktail = key
+    res['response']['card'] = {}
+    res['response']['card']['type'] = 'BigImage'
+    res['response']['card']['title'] = 'Вот и он сам ^-^'
+    res['response']['card']['image_id'] = recipes_1[key[0]]
+    res['response']['text'] = f'''{key[0].lower()}:
+                                      {key[1].lower()}'''
+    elif req['request']['original_utterance'].lower() == 'безалкогольный':
+        key = random.choice(list(child_recipes.items()))
+        current_cocktail = key
+        res['response']['card'] = {}
+        res['response']['card']['type'] = 'BigImage'
+        res['response']['card']['title'] = 'Вот и он сам ^-^'
+        res['response']['card']['image_id'] = recipes_2[key[0]]
+        res['response']['text'] = f'''{key[0].lower()}:
+                                      {key[1].lower()}'''
     res['response']['buttons'] = [
         {
-            'title': 'Продолжить',
+            'title': 'Помощь',
             'hide': True
-            }
-        ]
-    a += 1
-    if req['request']['original_utterance'].lower() == 'продолжить':
-        text(res, a)
-        res['response']['buttons'] = [
+        },
         {
-            'title': 'Далее',
+            'title': 'ещё',
             'hide': True
-            }
-        ]
-    a += 1
-    if req['request']['original_utterance'].lower() == 'далее':
-        text(res, a)
-        res['response']['buttons'] = [
+        },
         {
-            'title': 'Наведу справки о группе студентов Киттинг',
+            'title': 'всё',
             'hide': True
-            },
+        },
         {
-            'title': 'Перечитаю материалы дела Стэнгард',
+            'title': 'Где попробовать?',
             'hide': True
-            },
+        },
         {
-            'title': 'Пойду в бар и напьюсь',
+            'title': 'алкогольный',
             'hide': True
-            }
-        ]
-    if req['request']['original_utterance'].lower() == 'наведу справки о группе студентов киттинг':
-        information(res, req)
-    if req['request']['original_utterance'].lower() == 'далее':
-        pass
-    if req['request']['original_utterance'].lower() == 'далее':
-        pass
-    return
+        },
+        {
+            'title': 'безалкогольный',
+            'hide': True
+        },
+        {
+            'title': 'узнать рецепт',
+            'hide': True
+        },
+        {
+            'title': 'где попробовать ^-^',
+            "payload": {},
+            "url": "https://yandex.ru/maps/213/moscow/?ll=37.629241%2C55.751866&mode=search&sctx=ZAAAAAgBEAAaKAoSCV%2"
+                   "FEqZyX0EJAEfdrmakc4EtAEhIJz6zbrTaLtD8RaAxDdTr3sj8oCjAAOKmgsvLx14TPIkC3ngFIAVXNzMw%2BWABiEmRpcmVjd"
+                   "F9wYWdlX2lkPTI0MmoCcnVwAJ0BzczMPaABAKgBAA%3D%3D&sll=37.629241%2C55.751866&source=serp_"
+                   "navig&sspn=0.123081%2C0.043034&text=%D0%B1%D0%B0%D1%80%D1%8B%20%D0%BC%D0%BE%D1%81%D0%"
+                   "BA%D0%B2%D1%8B&z=14",
+            "hide": True
 
-def text(res, a):
-    ans_list = [''' 
-                    Вы – Нэйт Лэхи, офицер полиции. Обладаете незаурядным умом и можете раскрыть даже самое запутанное дело.
-                    Пропала Лайла Стэнгард, студентка. О её пропаже заявила одна из её подруг. В последний раз девушку видели 30 августа 2014 года на вечеринке в Университете Миддлтон,
-                    на которой она застукала своего парня, Гриффина О’Райли и подругу Ребекку Саттер вместе, разозлилась и ушла. После этого её никто не видел.
-                ''',
-                '''
-                    Несколько дней спустя, её тело было найдено в резервуаре на крыше кампуса. О’Райли и Саттер были арестованы на следующий после этого день.
-                    Известно, что Ребекка работала в баре за пределами кампуса, где студенты покупали наркотики. Она привлекалась за хранение и продажу.
-                ''',
-                '''
-                    Сейчас 7 часов вечера. Ваш рабочий день окончен, но вы сидите в пустом офисе, потому что вас не покидает одно смутное подозрение по поводу нераскрытого дела. Итак, что же вы будете делать?
-                '''
-
+        }
     ]
-    res['response']['text'] = ans_list[a]
+
     return
-def information_text(res, a):
-    ans_list = [''' 
-                    Каждый год Аннализ Киттинг берёт к себе в помощники наиболее способных студентов со своего курса.
-                    Они борются за приз: статуэтку Фемиды с завязанными глазами, который получит студент, проявивший себя наилучшим образом. ''',
-                '''
-                    Вы порылись в базе данных и вот что там нашли: мать Уэса Гиббинса иммигрировала из Гаити в Соединённые Штаты и начала работать в семье Махони.
-                    Она покончила с собой, когда ему было 12. Про отца ничего не известно.
-                ''',
-                ''' 
-                    Родители Лорел Кастильо разведены, живут в Испании. Отец может быть замешан в чём-то противозаконном. В 16 лет она была похищена, выкуп за неё не был заплачен.
-                ''',
-                ''' 
-                    У Микаэллы Пратт отличное резюме и идеальная характеристика. Её отец застрелил её мать, когда ей было 2 года.
-                ''',
-                '''
-                    Вы читали досье очередного студента, как вдруг у вас зазвонил телефон. 
-                ''',
-                '''
-                    Звонит Аннализ Киттинг. Вы расстались после того, как на последнем заседании она вызвала вас в качестве свидетеля и заставила признаться в том,
-                    что в вашем отделе были случаи фальсификации улик. Вы на неё злитесь, но понимаете, что она может звонить по делу. Возьмёте трубку или сбросите? 
-                '''
-    ]
-    res['response']['text'] = ans_list[a]
-    return
-
-def information(res, req):
-    a = 0
-    res['response']['buttons'] = [
-        {
-            'title': 'дальше',
-            'hide': True
-            }
-        ]
-    if req['request']['original_utterance'].lower() == 'дальше':
-        information_text(res, a)
-    a += 1
-    return
-
-
-def help(res):
-    res['response']['text'] = '''
-    Данная игра представляет собой текстовый квест. Вам будет предложено сыграть за детектива Нэйла Лэхи, которому предстоит расследовать убийство. Вам будут предложены несколько вариантов ответа, благодоря которым вы будите продвигаться по сюжету и раскроете убийство. Приятной игры'''
-
-
-def characters(res):
-    res['response']['text'] = '''
-    • Аннализ Киттинг – адвокат, преподаёт в Университете Миддлтон право,жена Сэма Киттинга, имеет свою частную фирму.
-    • Сэм Киттинг – психолог, муж Аннализ, преподаёт в Университете Миддлтон философию.
-    • Нэйт Лэхи – детектив, бывший любовник Аннализ.
-    • Уэс Гиббинс – студент Аннализ.
-    • Коннор Уолш – студент Аннализ.
-    • Микаэлла Пратт – студентка Аннализ.
-    • Ашер Миллстоун – студент Аннализ.
-    • Лорел Кастильо – студентка Аннализ.
-    • Фрэнк Дельфино – сотрудник фирмы Аннализ.
-    • Бонни Уинтерботтом – сотрудница фирмы Аннализ.
-    • Оливер Хэмптон – парень Коннора, IT-специалист.
-    • Лайла Стэнгард – бывшая любовница Сэма, его студентка.'''
 
 
 def get_first_name(req):
-
     for entity in req['request']['nlu']['entities']:
 
         if entity['type'] == 'YANDEX.FIO':
