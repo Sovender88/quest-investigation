@@ -200,22 +200,18 @@ def handle_dialog(res, req):
 
                     res['response']['text'] = 'Удачи в приготовлении'
                     res['end_session'] = True
-        elif req['request']['original_utterance'].lower() == 'Где попробовать?':
-            bar(res, req)
-        elif req['request']['original_utterance'].lower() == 'узнать рецепт':
-            how_cook(res, req, current_cocktail)
-'''
-тут надо вывести карту с барами москвы
-'''
-def bar(res, req):
-   pass
 
-def how_cook(res, req, current_cocktail):
+        elif req['request']['original_utterance'].lower() == 'узнать рецепт':
+            how_cook(res, current_cocktail)
+
+
+def how_cook(res, current_cocktail):
     key = current_cocktail
     res['response']['text'] = f'''{key[0].lower()}:
                                           {key[1].lower()}'''
-    return 
-    
+    return
+
+
 def play_game(res, req):
     global current_cocktail
     id = '1030494/cba860462f03d20a325a'
@@ -226,15 +222,12 @@ def play_game(res, req):
         res['response']['card']['type'] = 'BigImage'
         res['response']['card']['title'] = 'Вот и он сам ^-^'
         res['response']['card']['image_id'] = id
-        
+        res['response']['text'] = f'''{key[0].lower()}:
+                                      {key[1].lower()}'''
     elif req['request']['original_utterance'].lower() == 'безалкогольный':
         key = random.choice(list(child_recipes.items()))
-        current_cocktail = key
-        res['response']['card'] = {}
-        res['response']['card']['type'] = 'BigImage'
-        res['response']['card']['title'] = 'Вот и он сам ^-^'
-        res['response']['card']['image_id'] = id
-        
+        res['response']['text'] = f'''{key[0].lower()}:
+                                      {key[1].lower()}'''
     res['response']['buttons'] = [
         {
             'title': 'Помощь',
@@ -263,6 +256,17 @@ def play_game(res, req):
         {
             'title': 'узнать рецепт',
             'hide': True
+        },
+        {
+            'title': 'где попробовать ^-^',
+            "payload": {},
+            "url": "https://yandex.ru/maps/213/moscow/?ll=37.629241%2C55.751866&mode=search&sctx=ZAAAAAgBEAAaKAoSCV%2"
+                   "FEqZyX0EJAEfdrmakc4EtAEhIJz6zbrTaLtD8RaAxDdTr3sj8oCjAAOKmgsvLx14TPIkC3ngFIAVXNzMw%2BWABiEmRpcmVjd"
+                   "F9wYWdlX2lkPTI0MmoCcnVwAJ0BzczMPaABAKgBAA%3D%3D&sll=37.629241%2C55.751866&source=serp_"
+                   "navig&sspn=0.123081%2C0.043034&text=%D0%B1%D0%B0%D1%80%D1%8B%20%D0%BC%D0%BE%D1%81%D0%"
+                   "BA%D0%B2%D1%8B&z=14",
+            "hide": True
+
         }
     ]
 
