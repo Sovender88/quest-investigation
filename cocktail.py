@@ -229,6 +229,11 @@ def play_game(res, req):
         
     elif req['request']['original_utterance'].lower() == 'безалкогольный':
         key = random.choice(list(child_recipes.items()))
+        current_cocktail = key
+        res['response']['card'] = {}
+        res['response']['card']['type'] = 'BigImage'
+        res['response']['card']['title'] = 'Вот и он сам ^-^'
+        res['response']['card']['image_id'] = id
         
     res['response']['buttons'] = [
         {
