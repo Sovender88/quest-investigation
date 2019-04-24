@@ -232,7 +232,7 @@ def play_game(res, req):
         res['response']['card']['image_id'] = recipes_2[key[0]]
         res['response']['text'] = f'''{key[0].lower()}:
                                       {key[1].lower()}'''
-        res['response']['buttons'] = [
+    res['response']['buttons'] = [
         {
             'title': 'Помощь',
             'hide': True
