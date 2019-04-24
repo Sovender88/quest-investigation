@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 sessionStorage = {}
-
+current_cocktail = None
 
 @app.route('/post', methods=['POST'])
 def main():
@@ -135,6 +135,8 @@ def handle_dialog(res, req):
                 ]
 
                 play_game(res, req)
+            elif req['request']['original_utterance'].lower() == 'узнать рецепт':
+                how_cook(res, req, current_cocktail)
             else:
                 res['response']['text'] = 'Не понял ответа! Так да или нет?'
                 res['response']['buttons'] = [
@@ -200,38 +202,37 @@ def handle_dialog(res, req):
                     res['end_session'] = True
         elif req['request']['original_utterance'].lower() == 'Где попробовать?':
             bar(res, req)
-
+        elif req['request']['original_utterance'].lower() == 'узнать рецепт':
+            how_cook(res, req, current_cocktail)
 '''
 тут надо вывести карту с барами москвы
 '''
 def bar(res, req):
    pass
 
-
+def how_cook(res, req, current_cocktail):
+    key = current_cocktail
+    res['response']['text'] = f'''{key[0].lower()}:
+                                          {key[1].lower()}'''
+    return 
+    
 def play_game(res, req):
+    global current_cocktail
     id = '1030494/cba860462f03d20a325a'
     if req['request']['original_utterance'].lower() == 'алкогольный':
         key = random.choice(list(cocktail_recipes.items()))
+        current_cocktail = key
         res['response']['card'] = {}
         res['response']['card']['type'] = 'BigImage'
-        res['response']['card']['title'] = f'{key[1].lower()}'
+        res['response']['card']['title'] = 'Вот и он сам ^-^'
         res['response']['card']['image_id'] = id
-        
+        res['response']['text'] = f'''{key[0].lower()}:
+                                      {key[1].lower()}'''
     elif req['request']['original_utterance'].lower() == 'безалкогольный':
         key = random.choice(list(child_recipes.items()))
         res['response']['text'] = f'''{key[0].lower()}:
                                       {key[1].lower()}'''
     res['response']['buttons'] = [
-        {
-            'title': 'Да',
-            'hide': True
-
-        },
-        {
-            'title': 'Нет',
-            'hide': True
-
-        },
         {
             'title': 'Помощь',
             'hide': True
@@ -254,6 +255,10 @@ def play_game(res, req):
         },
         {
             'title': 'безалкогольный',
+            'hide': True
+        },
+        {
+            'title': 'узнать рецепт',
             'hide': True
         }
     ]
