@@ -214,18 +214,22 @@ def how_cook(res, current_cocktail):
 
 def play_game(res, req):
     global current_cocktail
-    id = '1030494/cba860462f03d20a325a'
     if req['request']['original_utterance'].lower() == 'алкогольный':
-        key = random.choice(list(cocktail_recipes.items()))
+    key = random.choice(list(cocktail_recipes.items()))
+    current_cocktail = key
+    res['response']['card'] = {}
+    res['response']['card']['type'] = 'BigImage'
+    res['response']['card']['title'] = 'Вот и он сам ^-^'
+    res['response']['card']['image_id'] = recipes_1[key[0]]
+    res['response']['text'] = f'''{key[0].lower()}:
+                                      {key[1].lower()}'''
+    elif req['request']['original_utterance'].lower() == 'безалкогольный':
+        key = random.choice(list(child_recipes.items()))
         current_cocktail = key
         res['response']['card'] = {}
         res['response']['card']['type'] = 'BigImage'
         res['response']['card']['title'] = 'Вот и он сам ^-^'
-        res['response']['card']['image_id'] = id
-        res['response']['text'] = f'''{key[0].lower()}:
-                                      {key[1].lower()}'''
-    elif req['request']['original_utterance'].lower() == 'безалкогольный':
-        key = random.choice(list(child_recipes.items()))
+        res['response']['card']['image_id'] = recipes_2[key[0]]
         res['response']['text'] = f'''{key[0].lower()}:
                                       {key[1].lower()}'''
     res['response']['buttons'] = [
