@@ -3,6 +3,8 @@ import logging
 import json
 import random
 from recipes import cocktail_recipes, child_recipes
+from pics import recipes_1, recipes_2
+
 
 app = Flask(__name__)
 
@@ -207,8 +209,13 @@ def bar(res, req):
 
 
 def play_game(res, req):
+    id = '1030494/cba860462f03d20a325a'
     if req['request']['original_utterance'].lower() == 'алкогольный':
         key = random.choice(list(cocktail_recipes.items()))
+        res['response']['card'] = {}
+        res['response']['card']['type'] = 'BigImage'
+        res['response']['card']['title'] = 'Вот и он сам ^-^'
+        res['response']['card']['image_id'] = id
         res['response']['text'] = f'''{key[0].lower()}:
                                       {key[1].lower()}'''
     elif req['request']['original_utterance'].lower() == 'безалкогольный':
