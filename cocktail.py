@@ -177,7 +177,8 @@ def handle_dialog(res, req):
                 ]
 
         elif req['request']['original_utterance'].lower() == 'помощь':
-                res['response']['text'] = 'Это текст помомщи. Будь смелее и продолжи общение.'
+                res['response']['text'] = 'чтобы получить рецепт напишите "ещё";' \
+                                          'чтобы закончить, напишите "всё"'
         elif req['request']['original_utterance'].lower() == 'алкогольный':
             play_game(res, req)
         elif req['request']['original_utterance'].lower() == 'безалкогольный':
